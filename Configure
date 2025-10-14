@@ -420,6 +420,8 @@ my @dtls = qw(dtls1 dtls1_2);
 # For developers: keep it sorted alphabetically
 
 my @disablables = (
+    "cupqc", #added so the build can be opted in with enable-cupqc. 
+
     "acvp-tests",
     "afalgeng",
     "apps",
