@@ -1,0 +1,30 @@
+# Build local static library with the implementation
+LIBS{noinst}=libcupqcprov.a
+
+INCLUDE[libcupqcprov.a]= \
+        . \
+        ../common/include \
+        ../implementations/include
+
+SOURCE[libcupqcprov.a]= \
+        cupqc_wrap.c \
+        kem_mlkem_cupqc.c \
+        keymgmt_mlkem_cupqc.c
+
+# Build the provider module that depends on the local static lib,
+# providers/libcommon.a, and the top-level libcrypto
+MODULES=cupqcprov
+
+SOURCE[cupqcprov]= \
+        cupqcprov.c
+
+INCLUDE[cupqcprov]= \
+        . \
+        ../common/include \
+        ../implementations/include
+
+DEPEND[cupqcprov]= \
+        libcupqcprov.a \
+        ../libcommon.a \
+        ../../libcrypto
+
