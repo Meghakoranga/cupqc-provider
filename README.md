@@ -1,260 +1,39 @@
-Welcome to the OpenSSL Project
-==============================
+# cuPQC OpenSSL Provider Integration
 
-[![openssl logo]][www.openssl.org]
+## Overview
 
-[![github actions ci badge]][github actions ci]
-![Nightly OS Zoo ci badge](https://github.com/openssl/openssl/actions/workflows/os-zoo.yml/badge.svg)
-![Provider Compatibility](https://github.com/openssl/openssl/actions/workflows/provider-compatibility.yml/badge.svg)
-![Quic Interop](https://github.com/openssl/openssl/actions/workflows/run_quic_interop.yml/badge.svg)
-![Daily checks](https://github.com/openssl/openssl/actions/workflows/run-checker-daily.yml/badge.svg)
+This repository contains a fork of OpenSSL that integrates a new, in-tree provider module named `cupqcprov`. This provider enables GPU-accelerated post-quantum cryptography (PQC) by integrating **NVIDIA's cuPQC library** directly into the OpenSSL framework.
 
-OpenSSL is a robust, commercial-grade, full-featured Open Source Toolkit
-for the TLS (formerly SSL), DTLS and QUIC protocols.
+The primary goal of this project is to implement the **ML-KEM-768** Key Encapsulation Mechanism (KEM) as a pluggable and selectable algorithm in OpenSSL 3.x. This allows applications to leverage GPU hardware for performance-critical PQC operations seamlessly through OpenSSL's standard APIs.
 
-The protocol implementations are based on a full-strength general purpose
-cryptographic library, which can also be used stand-alone. Also included is a
-cryptographic module validated to conform with FIPS standards.
+---
 
-OpenSSL is descended from the SSLeay library developed by Eric A. Young
-and Tim J. Hudson.
+## Key Features
 
-The official Home Page of the OpenSSL Project is [www.openssl.org].
+*   **In-Tree Provider Module (`cupqcprov`)**: The functionality is implemented as a self-contained provider, which is the modern, modular way to extend OpenSSL.
+*   **GPU Acceleration for PQC**: Implements ML-KEM-768 operations by calling the highly optimized cuPQC library, offloading cryptographic work to compatible NVIDIA GPUs.
+*   **Dynamic Loading**: The provider finds and loads the `libcupqc.so` shared library at runtime using `dlopen` and `dlsym`. This makes cuPQC an **optional dependency**, ensuring this OpenSSL build remains portable and can run on systems without a GPU or the cuPQC SDK.
+*   **Property-Based Selection**: The GPU-accelerated algorithm is tagged with the custom property `accelerated=gpu`. This allows applications to explicitly request the GPU implementation, coexisting cleanly with the standard CPU version from OpenSSL's default provider.
 
-Table of Contents
-=================
+***
 
- - [Overview](#overview)
- - [Download](#download)
- - [Build and Install](#build-and-install)
- - [Documentation](#documentation)
- - [License](#license)
- - [Support](#support)
- - [Contributing](#contributing)
- - [Legalities](#legalities)
+## What This Repository Contains
 
-Overview
-========
+This repository includes all the necessary source code and build system modifications to integrate the `cupqcprov` provider.
 
-The OpenSSL toolkit includes:
+*   **`providers/cupqcprov/`**: A new directory containing all the source code for the provider.
+    *   `cupqcprov.c`: The main entry point that registers the provider and its algorithms with OpenSSL.
+    *   `cupqc_wrap.h` / `cupqc_wrap.c`: A wrapper that handles the dynamic loading of the `libcupqc.so` library and checks for its availability.
+    *   `kem_mlkem_cupqc.c`: The implementation of the KEM interface for ML-KEM-768.
+    *   `keymgmt_mlkem_cupqc.c`: The implementation of the key management interface (key generation, import, export) for ML-KEM-768.
+    *   `build.info`: Build instructions that define how to compile the provider module.
 
-- **libssl**
-  an implementation of all TLS protocol versions up to TLSv1.3 ([RFC 8446]),
-  DTLS protocol versions up to DTLSv1.2 ([RFC 6347]) and
-  the QUIC version 1 protocol ([RFC 9000]).
+*   **Build System Modifications**:
+    *   `providers/build.info`: Modified to conditionally include the `cupqcprov` subdirectory in the build.
+    - `Configure`: Patched to add a new `--enable-cupqc` feature flag.
 
-- **libcrypto**
-  a full-strength general purpose cryptographic library. It constitutes the
-  basis of the TLS implementation, but can also be used independently.
+***
 
-- **openssl**
-  the OpenSSL command line tool, a swiss army knife for cryptographic tasks,
-  testing and analyzing. It can be used for
-  - creation of key parameters
-  - creation of X.509 certificates, CSRs and CRLs
-  - calculation of message digests
-  - encryption and decryption
-  - SSL/TLS/DTLS and client and server tests
-  - QUIC client tests
-  - handling of S/MIME signed or encrypted mail
-  - and more...
+## Next Steps
 
-Download
-========
-
-For Production Use
-------------------
-
-Source code tarballs of the official releases can be downloaded from
-[openssl-library.org/source/](https://openssl-library.org/source/).
-The OpenSSL project does not distribute the toolkit in binary form.
-
-However, for a large variety of operating systems precompiled versions
-of the OpenSSL toolkit are available. In particular, on Linux and other
-Unix operating systems, it is normally recommended to link against the
-precompiled shared libraries provided by the distributor or vendor.
-
-We also maintain a list of third parties that produce OpenSSL binaries for
-various Operating Systems (including Windows) on the [Binaries] page on our
-wiki.
-
-For Testing and Development
----------------------------
-
-Although testing and development could in theory also be done using
-the source tarballs, having a local copy of the git repository with
-the entire project history gives you much more insight into the
-code base.
-
-The main OpenSSL Git repository is private.
-There is a public GitHub mirror of it at [github.com/openssl/openssl],
-which is updated automatically from the former on every commit.
-
-A local copy of the Git repository can be obtained by cloning it from
-the GitHub mirror using
-
-    git clone https://github.com/openssl/openssl.git
-
-If you intend to contribute to OpenSSL, either to fix bugs or contribute
-new features, you need to fork the GitHub mirror and clone your public fork
-instead.
-
-    git clone https://github.com/yourname/openssl.git
-
-This is necessary because all development of OpenSSL nowadays is done via
-GitHub pull requests. For more details, see [Contributing](#contributing).
-
-Build and Install
-=================
-
-After obtaining the Source, have a look at the [INSTALL](INSTALL.md) file for
-detailed instructions about building and installing OpenSSL. For some
-platforms, the installation instructions are amended by a platform specific
-document.
-
- * [Notes for UNIX-like platforms](NOTES-UNIX.md)
- * [Notes for Android platforms](NOTES-ANDROID.md)
- * [Notes for Windows platforms](NOTES-WINDOWS.md)
- * [Notes for the DOS platform with DJGPP](NOTES-DJGPP.md)
- * [Notes for the OpenVMS platform](NOTES-VMS.md)
- * [Notes on Perl](NOTES-PERL.md)
- * [Notes on Valgrind](NOTES-VALGRIND.md)
-
-Specific notes on upgrading to OpenSSL 3.x from previous versions can be found
-in the [ossl-guide-migration(7ossl)] manual page.
-
-Documentation
-=============
-
-README Files
-------------
-
-There are some README.md files in the top level of the source distribution
-containing additional information on specific topics.
-
- * [Information about the OpenSSL QUIC protocol implementation](README-QUIC.md)
- * [Information about the OpenSSL Provider architecture](README-PROVIDERS.md)
- * [Information about using the OpenSSL FIPS validated module](README-FIPS.md)
- * [Information about the legacy OpenSSL Engine architecture](README-ENGINES.md)
-
-The OpenSSL Guide
------------------
-
-There are some tutorial and introductory pages on some important OpenSSL topics
-within the [OpenSSL Guide].
-
-Manual Pages
-------------
-
-The manual pages for the master branch and all current stable releases are
-available online.
-
-- [OpenSSL master](https://www.openssl.org/docs/manmaster)
-- [OpenSSL 3.0](https://www.openssl.org/docs/man3.0)
-- [OpenSSL 3.1](https://www.openssl.org/docs/man3.1)
-- [OpenSSL 3.2](https://www.openssl.org/docs/man3.2)
-
-Demos
------
-
-There are numerous source code demos for using various OpenSSL capabilities in the
-[demos subfolder](./demos).
-
-Wiki
-----
-
-There is a [GitHub Wiki] which is currently not very active.
-
-License
-=======
-
-OpenSSL is licensed under the Apache License 2.0, which means that
-you are free to get and use it for commercial and non-commercial
-purposes as long as you fulfill its conditions.
-
-See the [LICENSE.txt](LICENSE.txt) file for more details.
-
-Support
-=======
-
-There are various ways to get in touch. The correct channel depends on
-your requirement. See the [SUPPORT](SUPPORT.md) file for more details.
-
-Contributing
-============
-
-If you are interested and willing to contribute to the OpenSSL project,
-please take a look at the [CONTRIBUTING](CONTRIBUTING.md) file.
-
-Legalities
-==========
-
-A number of nations restrict the use or export of cryptography. If you are
-potentially subject to such restrictions, you should seek legal advice before
-attempting to develop or distribute cryptographic code.
-
-Copyright
-=========
-
-Copyright (c) 1998-2025 The OpenSSL Project Authors
-
-Copyright (c) 1995-1998 Eric A. Young, Tim J. Hudson
-
-All rights reserved.
-
-<!-- Links  -->
-
-[www.openssl.org]:
-    <https://www.openssl.org>
-    "OpenSSL Homepage"
-
-[github.com/openssl/openssl]:
-    <https://github.com/openssl/openssl>
-    "OpenSSL GitHub Mirror"
-
-[GitHub Wiki]:
-    <https://github.com/openssl/openssl/wiki>
-    "OpenSSL Wiki"
-
-[ossl-guide-migration(7ossl)]:
-    <https://www.openssl.org/docs/manmaster/man7/ossl-guide-migration.html>
-    "OpenSSL Migration Guide"
-
-[RFC 8446]:
-     <https://tools.ietf.org/html/rfc8446>
-
-[RFC 6347]:
-     <https://tools.ietf.org/html/rfc6347>
-
-[RFC 9000]:
-     <https://tools.ietf.org/html/rfc9000>
-
-[Binaries]:
-    <https://github.com/openssl/openssl/wiki/Binaries>
-    "List of third party OpenSSL binaries"
-
-[OpenSSL Guide]:
-    <https://www.openssl.org/docs/manmaster/man7/ossl-guide-introduction.html>
-    "An introduction to OpenSSL"
-
-<!-- Logos and Badges -->
-
-[openssl logo]:
-    doc/images/openssl.svg
-    "OpenSSL Logo"
-
-[github actions ci badge]:
-    <https://github.com/openssl/openssl/workflows/GitHub%20CI/badge.svg>
-    "GitHub Actions CI Status"
-
-[github actions ci]:
-    <https://github.com/openssl/openssl/actions?query=workflow%3A%22GitHub+CI%22>
-    "GitHub Actions CI"
-
-[appveyor badge]:
-    <https://ci.appveyor.com/api/projects/status/8e10o7xfrg73v98f/branch/master?svg=true>
-    "AppVeyor Build Status"
-
-[appveyor jobs]:
-    <https://ci.appveyor.com/project/openssl/openssl/branch/master>
-    "AppVeyor Jobs"
+This repository is currently under development. Instructions for building, installing, and testing the provider will be added once the implementation is finalized and validated on a GPU-based environment.
