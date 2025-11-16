@@ -1,0 +1,11 @@
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = ps
+
+[ps]
+cupqcprov = only
+
+[only]
+module = /home/ubuntu/src/cupqc-provider/build/cupqcprov.so
+activate = 1

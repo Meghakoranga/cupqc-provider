@@ -1,0 +1,15 @@
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+cupqcprov = cupqcprov_sect
+
+[default_sect]
+activate = 1
+
+[cupqcprov_sect]
+module = /home/ubuntu/src/cupqc-provider/build/cupqcprov.so
+activate = 1
