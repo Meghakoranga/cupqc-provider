@@ -4,7 +4,6 @@ GPU-accelerated post-quantum cryptography provider for OpenSSL 3.x using NVIDIA 
 
 ## Features
 - ML-KEM-768 Key Encapsulation Mechanism with GPU acceleration
-- Standalone out-of-tree provider (no OpenSSL source modification)
 - Drop-in replacement for CPU ML-KEM implementations
 
 ## Requirements
