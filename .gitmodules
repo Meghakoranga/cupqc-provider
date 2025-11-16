@@ -1,0 +1,4 @@
+[submodule "src/external/cupqc-prov"]
+	path = src/external/cupqc-prov
+	url = https://github.com/MeghaKoranga/cupqc-provider.git
+	branch = standalone
